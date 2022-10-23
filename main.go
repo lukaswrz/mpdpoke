@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"html"
 	"log"
@@ -8,6 +9,10 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 
 	"github.com/BurntSushi/toml"
 	"github.com/esiqveland/notify"
@@ -91,7 +96,7 @@ func dialMPD(network string, addr string, passwd string) (*mpd.Client, error) {
 	return client, nil
 }
 
-func watchMPD(net string, addr string, passwd string, run func(attrs mpd.Attrs) (bool, error)) []error {
+func watchMPD(net string, addr string, passwd string, run func(attrs mpd.Attrs, img image.Image) (bool, error)) []error {
 	errs := []error{}
 
 	client, err := dialMPD(net, addr, passwd)
@@ -128,7 +133,19 @@ func watchMPD(net string, addr string, passwd string, run func(attrs mpd.Attrs) 
 				return []error{err}
 			}
 
-			running, err = run(attrs)
+			var img image.Image
+
+			if uri, ok := attrs["file"]; ok {
+				data, err := client.AlbumArt(uri)
+				if err == nil {
+					img, _, err = image.Decode(bytes.NewReader(data))
+					if err != nil {
+						return []error{err}
+					}
+				}
+			}
+
+			running, err = run(attrs, img)
 			if err != nil {
 				return []error{err}
 			}
@@ -202,7 +219,7 @@ func main() {
 		log.Fatalf("Error while determining network: %s", err.Error())
 	}
 
-	errs := watchMPD(net, c.MPD.Address, c.MPD.Password, func(attrs mpd.Attrs) (bool, error) {
+	errs := watchMPD(net, c.MPD.Address, c.MPD.Password, func(attrs mpd.Attrs, img image.Image) (bool, error) {
 		if _, ok := attrs["Title"]; !ok {
 			return true, nil
 		}
@@ -230,6 +247,30 @@ func main() {
 		}
 
 		n.Body = strings.Join(body, "\n")
+
+		p, ok := img.(*image.RGBA)
+		if ok {
+			type imgdata struct {
+				Width         int
+				Height        int
+				RowStride     int
+				HasAlpha      bool
+				BitsPerSample int
+				Samples       int
+				Image         []byte
+			}
+
+			r := p.Bounds()
+			n.Hints["image-data"] = dbus.MakeVariant(imgdata{
+				r.Max.X,
+				r.Max.Y,
+				p.Stride,
+				true,
+				8,
+				4,
+				p.Pix,
+			})
+		}
 
 		if sent {
 			n.ReplacesID = createdID
