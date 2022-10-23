@@ -156,7 +156,7 @@ func main() {
 		log.Fatalf("Error while determining network: %s", err.Error())
 	}
 
-	errs := watchMPD(net, c.MPD.Address, c.MPD.Password, func(attrs mpd.Attrs, img image.Image) (bool, error) {
+	errs := watchMPD(net, c.MPD.Address, c.MPD.Password, func(attrs, status mpd.Attrs, img image.Image) (bool, error) {
 		if _, ok := attrs["Title"]; !ok {
 			return true, nil
 		}
@@ -170,7 +170,18 @@ func main() {
 		}
 
 		if title, ok := attrs["Title"]; ok {
-			n.Summary = title
+			prefix := ""
+
+			if state, ok := status["state"]; ok {
+				switch state {
+				case "play":
+					prefix = "\u25B6 "
+				case "pause":
+					prefix = "\u23F8 "
+				}
+			}
+
+			n.Summary = prefix + title
 		}
 
 		body := []string{}

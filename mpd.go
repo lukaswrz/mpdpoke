@@ -14,7 +14,7 @@ import (
 )
 
 // TODO: Add log.Logger
-func watchMPD(net string, addr string, passwd string, run func(attrs mpd.Attrs, img image.Image) (bool, error)) []error {
+func watchMPD(net string, addr string, passwd string, run func(attrs, status mpd.Attrs, img image.Image) (bool, error)) []error {
 	errs := []error{}
 
 	client, err := mpd.DialAuthenticated(net, addr, passwd)
@@ -66,6 +66,11 @@ func watchMPD(net string, addr string, passwd string, run func(attrs mpd.Attrs, 
 				return []error{err}
 			}
 
+			status, err := client.Status()
+			if err != nil {
+				return []error{err}
+			}
+
 			var img image.Image
 
 			if uri, ok := attrs["file"]; ok {
@@ -78,7 +83,7 @@ func watchMPD(net string, addr string, passwd string, run func(attrs mpd.Attrs, 
 				}
 			}
 
-			running, err = run(attrs, img)
+			running, err = run(attrs, status, img)
 			if err != nil {
 				return []error{err}
 			}
