@@ -103,6 +103,17 @@ func watchMPD(net string, addr string, passwd string, run func(attrs mpd.Attrs, 
 	if err != nil {
 		return []error{err}
 	}
+	ticker := time.NewTicker(60 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				log.Print("Pinging MPD...")
+				client.Ping()
+			}
+		}
+	}()
+	defer ticker.Stop()
 	defer func() {
 		if err := client.Close(); err != nil {
 			errs = append(errs, err)
