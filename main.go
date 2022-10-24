@@ -17,11 +17,17 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type mpdconfig struct {
+	Address  string        `toml:"address"`
+	Password string        `toml:"password"`
+	Interval time.Duration `toml:"interval"`
+}
+
 type config struct {
-	MPD struct {
-		Address  string `toml:"address"`
-		Password string `toml:"password"`
-	} `toml:"mpd"`
+	PlayIcon            string        `toml:"play_icon"`
+	PauseIcon           string        `toml:"pause_icon"`
+	NotificationTimeout time.Duration `toml:"notification_timeout"`
+	MPD                 mpdconfig     `toml:"mpd"`
 }
 
 type imgdata struct {
@@ -95,7 +101,16 @@ func determineNetwork(addr string) (string, error) {
 }
 
 func main() {
-	c := config{}
+	c := config{
+		PlayIcon:            "\u25B6",
+		PauseIcon:           "\u23F8",
+		NotificationTimeout: 5,
+		MPD: mpdconfig{
+			Address:  "127.0.0.1:6600",
+			Password: "",
+			Interval: 60,
+		},
+	}
 
 	paths := []string{"mpdpoke.toml"}
 	if ch, err := getConfigHome(); err != nil {
@@ -156,7 +171,7 @@ func main() {
 		log.Fatalf("Error while determining network: %s", err.Error())
 	}
 
-	errs := watchMPD(net, c.MPD.Address, c.MPD.Password, func(attrs, status mpd.Attrs, img image.Image) (bool, error) {
+	errs := watchMPD(net, c.MPD.Address, c.MPD.Password, c.MPD.Interval, func(attrs, status mpd.Attrs, img image.Image) (bool, error) {
 		if _, ok := attrs["Title"]; !ok {
 			return true, nil
 		}
@@ -166,7 +181,7 @@ func main() {
 			AppIcon:       "audio-x-generic",
 			Summary:       "-",
 			Hints:         map[string]dbus.Variant{},
-			ExpireTimeout: time.Second * 5,
+			ExpireTimeout: time.Second * c.NotificationTimeout,
 		}
 
 		if title, ok := attrs["Title"]; ok {
@@ -175,9 +190,9 @@ func main() {
 			if state, ok := status["state"]; ok {
 				switch state {
 				case "play":
-					prefix = "\u25B6 "
+					prefix = c.PlayIcon + " "
 				case "pause":
-					prefix = "\u23F8 "
+					prefix = c.PauseIcon + " "
 				}
 			}
 

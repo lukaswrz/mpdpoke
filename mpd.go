@@ -14,7 +14,7 @@ import (
 )
 
 // TODO: Add log.Logger
-func watchMPD(net string, addr string, passwd string, run func(attrs, status mpd.Attrs, img image.Image) (bool, error)) []error {
+func watchMPD(net string, addr string, passwd string, interval time.Duration, run func(attrs, status mpd.Attrs, img image.Image) (bool, error)) []error {
 	errs := []error{}
 
 	client, err := mpd.DialAuthenticated(net, addr, passwd)
@@ -25,7 +25,7 @@ func watchMPD(net string, addr string, passwd string, run func(attrs, status mpd
 	if err != nil {
 		return []error{err}
 	}
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(interval * time.Second)
 	go func() {
 		for {
 			select {
