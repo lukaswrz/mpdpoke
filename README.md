@@ -13,7 +13,7 @@ These are the defaults:
 ```toml
 play_icon = "\u25B6"
 pause_icon = "\u23F8"
-notification-timeout = 5
+notification_timeout = 5
 
 [mpd]
 address = "127.0.0.1:6600"
