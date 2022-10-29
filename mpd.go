@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"log"
 	"time"
 
@@ -13,8 +12,7 @@ import (
 	"github.com/fhs/gompd/v2/mpd"
 )
 
-// TODO: Add log.Logger
-func watchMPD(net string, addr string, passwd string, interval time.Duration, run func(attrs, status mpd.Attrs, img image.Image) (bool, error)) []error {
+func watchMPD(logger *log.Logger, net string, addr string, passwd string, interval time.Duration, run func(attrs, status mpd.Attrs, img image.Image) (bool, error)) []error {
 	errs := []error{}
 
 	client, err := mpd.DialAuthenticated(net, addr, passwd)
@@ -30,7 +28,7 @@ func watchMPD(net string, addr string, passwd string, interval time.Duration, ru
 		for {
 			select {
 			case <-ticker.C:
-				log.Print("Pinging MPD...")
+				logger.Print("Pinging MPD")
 				client.Ping()
 			}
 		}
@@ -58,17 +56,21 @@ func watchMPD(net string, addr string, passwd string, interval time.Duration, ru
 		select {
 		case subsystem := <-watcher.Event:
 			if subsystem != "player" {
-				return []error{errors.New("unexpected subsystem")}
+				continue
 			}
+
+			logger.Printf("Processing MPD event")
 
 			attrs, err := client.CurrentSong()
 			if err != nil {
-				return []error{err}
+				logger.Printf("Unable to get the current song")
+				continue
 			}
 
 			status, err := client.Status()
 			if err != nil {
-				return []error{err}
+				logger.Printf("Unable to obtain the current MPD status")
+				continue
 			}
 
 			var img image.Image
@@ -78,7 +80,7 @@ func watchMPD(net string, addr string, passwd string, interval time.Duration, ru
 				if err == nil {
 					img, _, err = image.Decode(bytes.NewReader(data))
 					if err != nil {
-						return []error{err}
+						logger.Printf("Cannot decode the image sent by MPD")
 					}
 				}
 			}
