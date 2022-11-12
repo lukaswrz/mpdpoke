@@ -115,7 +115,7 @@ func main() {
 	}
 
 	paths := []string{"mpdpoke.toml"}
-	if ch, err := getConfigHome(); err != nil {
+	if ch, err := getConfigHome(); err == nil {
 		paths = append(paths, path.Join(ch, "mpdpoke/mpdpoke.toml"))
 	}
 	paths = append(paths, "/etc/mpdpoke/mpdpoke.toml")
