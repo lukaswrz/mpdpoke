@@ -1,0 +1,15 @@
+[Unit]
+Description=mpdpoke daemon
+Requires=dbus.socket
+After=mpd.service network.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/mpdpoke
+ProtectSystem=strict
+TimeoutStopSec=20
+KillMode=mixed
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
