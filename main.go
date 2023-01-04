@@ -51,6 +51,7 @@ func readConfig(path string, paths []string, unmarshal func(data []byte, v inter
 			}
 
 			path = p
+			break
 		}
 
 		if path == "" {
