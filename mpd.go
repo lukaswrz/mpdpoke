@@ -12,7 +12,7 @@ import (
 	"github.com/fhs/gompd/v2/mpd"
 )
 
-func watchMPD(logger *log.Logger, net string, addr string, passwd string, interval time.Duration, run func(attrs, status mpd.Attrs, img image.Image) (bool, error)) []error {
+func watchMPD(net string, addr string, passwd string, interval time.Duration, run func(attrs, status mpd.Attrs, img image.Image) (bool, error)) []error {
 	errs := []error{}
 
 	client, err := mpd.DialAuthenticated(net, addr, passwd)
@@ -28,7 +28,7 @@ func watchMPD(logger *log.Logger, net string, addr string, passwd string, interv
 		for {
 			select {
 			case <-ticker.C:
-				logger.Print("Pinging MPD")
+				log.Print("Pinging MPD")
 				client.Ping()
 			}
 		}
@@ -59,17 +59,17 @@ func watchMPD(logger *log.Logger, net string, addr string, passwd string, interv
 				continue
 			}
 
-			logger.Printf("Processing MPD event")
+			log.Printf("Processing MPD event")
 
 			attrs, err := client.CurrentSong()
 			if err != nil {
-				logger.Printf("Unable to get the current song")
+				log.Printf("Unable to get the current song")
 				continue
 			}
 
 			status, err := client.Status()
 			if err != nil {
-				logger.Printf("Unable to obtain the current MPD status")
+				log.Printf("Unable to obtain the current MPD status")
 				continue
 			}
 
@@ -78,11 +78,11 @@ func watchMPD(logger *log.Logger, net string, addr string, passwd string, interv
 			if uri, ok := attrs["file"]; ok {
 				data, err := client.AlbumArt(uri)
 				if err != nil {
-					logger.Printf("Cannot retrieve album art: %s", err);
+					log.Printf("Cannot retrieve album art: %s", err);
 				} else {
 					img, _, err = image.Decode(bytes.NewReader(data))
 					if err != nil {
-						logger.Printf("Cannot decode the image sent by MPD")
+						log.Printf("Cannot decode the image sent by MPD")
 					}
 				}
 			}

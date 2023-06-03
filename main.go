@@ -102,7 +102,8 @@ func determineNetwork(addr string) (string, error) {
 }
 
 func main() {
-	logger := log.New(os.Stderr, "mpdpoke: ", log.Lshortfile)
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
+	log.SetPrefix("mpdpoke: ")
 
 	c := config{
 		PlayIcon:            "\u25B6",
@@ -139,7 +140,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		logger.Fatalf("Argument error: %s", err.Error())
+		log.Fatalf("Argument error: %s", err.Error())
 	}
 
 	err := readConfig(
@@ -149,21 +150,21 @@ func main() {
 		&c,
 	)
 	if err != nil {
-		logger.Fatalf("Error while attempting to read the configuration file: %s", err.Error())
+		log.Fatalf("Error while attempting to read the configuration file: %s", err.Error())
 	}
 
 	conn, err := dbus.SessionBusPrivate()
 	if err != nil {
-		logger.Fatalf("Could not connect to the session bus: %s", err.Error())
+		log.Fatalf("Could not connect to the session bus: %s", err.Error())
 	}
 	defer conn.Close()
 
 	if err = conn.Auth(nil); err != nil {
-		logger.Fatalf("Could not authenticate the session: %s", err.Error())
+		log.Fatalf("Could not authenticate the session: %s", err.Error())
 	}
 
 	if err = conn.Hello(); err != nil {
-		logger.Fatalf("Could not send initial DBus call: %s", err.Error())
+		log.Fatalf("Could not send initial DBus call: %s", err.Error())
 	}
 
 	var createdID uint32
@@ -171,10 +172,10 @@ func main() {
 
 	net, err := determineNetwork(c.MPD.Address)
 	if err != nil {
-		logger.Fatalf("Error while determining network: %s", err.Error())
+		log.Fatalf("Error while determining network: %s", err.Error())
 	}
 
-	errs := watchMPD(logger, net, c.MPD.Address, c.MPD.Password, c.MPD.Interval, func(attrs, status mpd.Attrs, img image.Image) (bool, error) {
+	errs := watchMPD(net, c.MPD.Address, c.MPD.Password, c.MPD.Interval, func(attrs, status mpd.Attrs, img image.Image) (bool, error) {
 		if _, ok := attrs["Title"]; !ok {
 			return true, nil
 		}
@@ -242,7 +243,7 @@ func main() {
 	})
 	if errs != nil && len(errs) != 0 {
 		for _, err := range errs {
-			logger.Printf("Error while watching: %s", err.Error())
+			log.Printf("Error while watching: %s", err.Error())
 		}
 		os.Exit(1)
 	}
