@@ -59,17 +59,17 @@ func watchMPD(net string, addr string, passwd string, interval time.Duration, ru
 				continue
 			}
 
-			log.Printf("Processing MPD event")
+			log.Print("Processing MPD event")
 
 			attrs, err := client.CurrentSong()
 			if err != nil {
-				log.Printf("Unable to get the current song")
+				log.Printf("Unable to get the current song: ", err)
 				continue
 			}
 
 			status, err := client.Status()
 			if err != nil {
-				log.Printf("Unable to obtain the current MPD status")
+				log.Printf("Unable to obtain the current MPD status: %s", err)
 				continue
 			}
 
@@ -82,7 +82,7 @@ func watchMPD(net string, addr string, passwd string, interval time.Duration, ru
 				} else {
 					img, _, err = image.Decode(bytes.NewReader(data))
 					if err != nil {
-						log.Printf("Cannot decode the image sent by MPD")
+						log.Printf("Cannot decode the image sent by MPD: ", err)
 					}
 				}
 			}

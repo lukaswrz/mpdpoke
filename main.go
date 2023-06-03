@@ -243,7 +243,7 @@ func main() {
 	})
 	if errs != nil && len(errs) != 0 {
 		for _, err := range errs {
-			log.Printf("Error while watching: %s", err.Error())
+			log.Printf("Error while watching: %s", err))
 		}
 		os.Exit(1)
 	}
