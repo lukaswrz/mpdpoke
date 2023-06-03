@@ -77,7 +77,9 @@ func watchMPD(logger *log.Logger, net string, addr string, passwd string, interv
 
 			if uri, ok := attrs["file"]; ok {
 				data, err := client.AlbumArt(uri)
-				if err == nil {
+				if err != nil {
+					logger.Printf("Cannot retrieve album art: %s", err);
+				} else {
 					img, _, err = image.Decode(bytes.NewReader(data))
 					if err != nil {
 						logger.Printf("Cannot decode the image sent by MPD")
